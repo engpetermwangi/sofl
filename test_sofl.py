@@ -1,12 +1,7 @@
 import pytest
-from flask import Flask
-from app import create_app
+from sofl import create_app
 
 app = create_app('testing')
-
-def test_app_instance():
-    assert isinstance(app, Flask)
-
 client = app.test_client()
 
 def test_client_works():

@@ -1,6 +1,7 @@
 class BaseConfig():
     DEBUG = False
-    
+    SECRET_KEY = 'this is to be kept secret'
+
 class Development(BaseConfig):
     DEBUG = True
     DATABASE = 'development.db'
