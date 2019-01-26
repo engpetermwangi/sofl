@@ -11,6 +11,6 @@ def create_app(environment):
 app = create_app('development')
 
 # Creation of database
-db = SqliteDatabase('temporary.db')
+db = SqliteDatabase(app.config['DATABASE'])
 
 from sofl import routes
