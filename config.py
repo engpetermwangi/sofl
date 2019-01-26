@@ -3,9 +3,11 @@ class BaseConfig():
     
 class Development(BaseConfig):
     DEBUG = True
+    DATABASE = 'development.db'
 
 class Testing(BaseConfig):
     TESTING = True
+    DATABASE = 'testing.db'
 
 class Production(BaseConfig):
     pass
