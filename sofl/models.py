@@ -1,4 +1,8 @@
+import os
+import base64
 from peewee import *
+from flask import url_for
+from datetime import datetime, timedelta
 from sofl import db
 
 # Database models
@@ -10,9 +14,39 @@ class BaseModel(Model):
 
 # User model
 class User(BaseModel):
-	'''A user has an id, username as the unique identifier and password'''
-	username = CharField(null = False, unique = True)
-	password = CharField(null = False)
+    '''A user has an id, username as the unique identifier and password'''
+    username = CharField(null = False, unique = True)
+    password = CharField(null = False)
+    token = CharField(unique = True)
+    token_expiration = DateTimeField()
+
+    def to_dict(self, include_password = False):
+        data = {
+            'id': self.id,
+            'username': self.username,
+            'link': url_for('get_specific_user', userId = self.id),
+            }
+        if include_password:
+            data['password'] = self.password
+        return data
+    
+    def get_token(self, expires_in = 3600):
+        now = datetime.utcnow()
+        if self.token and self.token_expiration > now + timedelta(seconds = 1):
+            return self.token
+        self.token = base64.b64encode(os.urandom(24)).decode('utf-8')
+        self.token_expiration = now + timedelta(seconds = expires_in)
+        return self.token
+    
+    def revoke_token(self):
+        self.token_expiration = datetime.utcnow() - timedelta(seconds=1)
+    
+    @staticmethod
+    def check_token(token):
+        user = User.get_or_none(User.token = token)
+        if user is None or user.token_expiration < datetime.utcnow():
+            return None
+        return user
 
 # Question model
 class Question(BaseModel):

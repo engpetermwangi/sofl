@@ -1,6 +1,7 @@
 from flask import make_response, jsonify, abort, request
 from sofl import app, db
 from sofl.models import User, Question, Answer, Comment
+from sofl.errors import error_response, bad_request
 
 # Connection to database before request
 @app.before_request
@@ -14,34 +15,46 @@ def teardown_request(exc):
 	if not db.is_closed():
 		db.close()
 
-# Error handlers
-@app.errorhandler(404)
-def not_found(error):
-	return make_response(jsonify({'404 error': 'requested resource not found'}))
-
 # URL Endpoints
+
 # Register a user
 @app.route('/auth/signup', methods = ['POST'])
 def signup_user():
-	#user = User.get(User.id == 3)
-	#user.delete_instance()
-	#User.create(username = 'Petniknker233mnjnjnjjjnnj4red',
-	#			password = 'qwerty')
-	return jsonify({'users': [user.id for user in User.select()]})
+	data = request.get_json() or {}
+	if 'username' not in data or 'password' not in data:
+		return bad_request('Must include username and password to signup.')
+	user = User.get_or_none(User.username == data['username'])
+	if user:
+		return bad_request('That username is already taken, please use a different one.')
+	User.create(username = data['username'], password = data['password'])
+	user = User.get(User.username == data['username'])
+	response = jsonify(user.to_dict(include_password = False))
+	response.status_code = 201
+	return response
 
 # Login a user
 @app.route('/auth/login', methods = ['POST'])
 def login_user():
-	user = User.get(User.username == 'Peter')
-	return jsonify(password = user.password)
+	data = request.get_json() or {}
+	if 'username' not in data or 'password' not in data:
+		return bad_request('Must include username and password to login.')
+	user = User.get_or_none(User.username == data['username'])
+	if not user:
+		return bad_request('Username not found. Register to signup.')
+	
+	response = 'me'
+	#response.status_code = 200
+	return response
 
 # Fetch all questions
 @app.route('/questions', methods = ['GET'])
 def fetch_questions():
 	questions = Question.select()
 	if len(questions) == 0:
-		abort(404)
-	return jsonify({'questions': [question.title for question in Question.select()]}) #jsonify({'questions': questions})
+		return make_response(404, 'No questions in the database.')
+	response = jsonify([question.to_dict() for question in questions])
+	response.status_code = 200
+	return response
 
 # Post a question
 @app.route('/questions', methods = ['POST'])
@@ -87,7 +100,7 @@ def downvote_answer():
 	return
 
 # Fetch all questions posted by the user
-@app.route('/questionsbyuser', methods = ['GET'])
+@app.route('/users/<userId>/questions', methods = ['GET'])
 def fetch_questions_by_user():
 	return
 
@@ -100,3 +113,12 @@ def search_for_question():
 @app.route('/questionwithmostanswers', methods = ['GET'])
 def question_with_most_answer():
 	return
+
+# Get a specific user
+@app.route('/users/<userId>', methods = ['GET'])
+def get_specific_user(userId):
+	user = User.get_or_none(User.id == userId)
+	if user:
+		return jsonify(user.to_dict()), 200
+	else:
+		return error_response(404, 'User with requested ID does not exist.')

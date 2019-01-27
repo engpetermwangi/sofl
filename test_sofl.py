@@ -8,31 +8,22 @@ def test_client_works():
     response = client.get('/nonexistent_endpoint')
     assert response.status_code == 404
 
-def signup(client, username, password):
-    return client.post('/auth/signup', data = {
-        'username': username,
-        'password': password
-        }, follow_redirects = True)
-
-def login(client, username, password):
-    return client.post('/login', data = {
-        'username': username,
-        'password', password
-        }, follow_redirects = True)
-
-def logout(client):
-    return client.post('/logout', follow_redirects = True)
-
-def test_signup(client):
-    response = signup(client, app.config['USERNAME'], app.config['PASSWORD'])
+def test_signup():
+    response = client.post('/auth/signup', data = {
+        'username': app.config['USERNAME'],
+        'password': app.config['PASSWORD']
+        })
     assert 'Successful signup!' in response.data
 
-def test_login(clinet):
-    response = login(client, app.config['USERNAME'], app.config['PASSWORD'])
+def test_login():
+    response = client.post('/auth/login', data = {
+        'username': app.config['USERNAME'],
+        'password': app.config['PASSWORD']
+        })
     assert 'Successful login!' in response.data
 
-def test_logout(client):
-    response = logout(client)
+def test_logout():
+    response = client.post('/auth/logout')
     assert 'Successful logout!' in response.data
 
 if __name__ == '__main__':
