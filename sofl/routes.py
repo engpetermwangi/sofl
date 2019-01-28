@@ -1,4 +1,5 @@
 from flask import make_response, jsonify, abort, request
+from werkzeug.security import generate_password_hash
 from sofl import app, db
 from sofl.models import User, Question, Answer, Comment
 from sofl.errors import error_response, bad_request
@@ -15,6 +16,9 @@ def teardown_request(exc):
 	if not db.is_closed():
 		db.close()
 
+@app.errorhandler(404)
+def error_404(error):
+	return error_response(404)
 # URL Endpoints
 
 # Register a user
@@ -26,9 +30,10 @@ def signup_user():
 	user = User.get_or_none(User.username == data['username'])
 	if user:
 		return bad_request('That username is already taken, please use a different one.')
-	User.create(username = data['username'], password = data['password'])
+	password_hash = generate_password_hash(data['password'])
+	User.create(username = data['username'], password_hash = password_hash)
 	user = User.get(User.username == data['username'])
-	response = jsonify(user.to_dict(include_password = False))
+	response = jsonify(user.to_dict())
 	response.status_code = 201
 	return response
 

@@ -1,7 +1,7 @@
 from flask import g
 from flask_httpauth import HTTPBasicAuth
 from sofl.models import User
-from sofl.models import error_response
+from sofl.errors import error_response
 
 basic_auth = HTTPBasicAuth()
 
@@ -15,4 +15,4 @@ def verify_password(username, password):
 
 @basic_auth.error_handler
 def basic_auth_error():
-    return error_response(401, 'Unauthorized due to invalid credentials.')
+    return error_response(401, 'Invalid credentials.')
